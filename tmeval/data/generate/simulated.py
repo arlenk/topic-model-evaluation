@@ -72,15 +72,14 @@ def generate_document_term_counts(model_parameters, seed=None):
     # based on a gamma function fit from nytimes dataset
     gamma_parameters = (5.4096036273853478, -52.666540545843134, 71.072370010304383)
     min_document_length = 10
-    document_lengths = ss.gamma.rvs(*gamma_parameters, size=num_documents)
-    document_lengths[document_lengths < min_document_length] = min_document_length
 
     topic_array = np.arange(num_topics)
     vocab_array = np.arange(num_vocab)
-    document_term_counts = []
 
     for idocument in range(num_documents):
-        document_length = int(document_lengths[idocument])
+        document_length = max(int(ss.gamma.rvs(*gamma_parameters)),
+                              min_document_length)
+
         document_topic_distribution = model_parameters.theta[idocument]
 
         # topic for each word in document
@@ -110,3 +109,68 @@ def generate_document_term_counts(model_parameters, seed=None):
             counts[word_index] += 1
 
         yield list((k, v) for (k, v) in counts.items())
+
+
+def generate_mmcorpus_files(model_parameters, document_term_counts, output_prefix,
+                            training_pct=.8):
+    """
+    Output training and validate mm files
+
+    :param model_parameters:
+    :param document_term_counts:
+    :param output_prefix:
+    :param training_pct:
+    :return:
+    """
+
+    num_documents = model_parameters.num_documents
+    num_documents_training = int(training_pct * num_documents)
+    num_documents_validation = num_documents - num_documents_training
+    num_vocab = model_parameters.num_vocab
+
+    print("outputting")
+    print("  num documents: {:,.0f}".format(num_documents))
+    print("  num training: {:,.0f}".format(num_documents_training))
+    print("  num validaiton: {:,.0f}".format(num_documents_validation))
+
+    def _write_headers(f, _num_documents=-1, _num_vocab=-1, _num_non_zero=-1):
+        f.seek(0)
+        f.write("%%MatrixMarket matrix coordinate real general\n")
+        header = "{} {} {}\n".format(_num_documents, _num_vocab, _num_non_zero)
+        header.ljust(50)
+        f.write(header)
+
+    # training
+    outfile = output_prefix + ".training.mm"
+    with open(outfile, 'w') as f:
+        _write_headers(f)
+        num_non_zero = 0
+
+        for idocument in range(num_documents_training):
+            if idocument % 500 == 0:
+                print("training document {}".format(idocument + 1))
+
+            term_counts = next(document_term_counts)
+            for term, count in term_counts:
+                f.write("{} {} {}\n".format(idocument + 1, term, count))
+                num_non_zero += count
+        _write_headers(f, num_documents_training, num_vocab, num_non_zero)
+
+    # validation
+    outfile = output_prefix + ".validation.mm"
+    with open(outfile, 'w') as f:
+        _write_headers(f)
+        num_non_zero = 0
+
+        for idocument in range(num_documents_validation):
+            if idocument % 500 == 0:
+                print("validation document {}".format(idocument + 1))
+
+            term_counts = next(document_term_counts)
+            for term, count in term_counts:
+                f.write("{} {} {}\n".format(idocument + 1, term, count))
+                num_non_zero += count
+        _write_headers(f, num_documents_validation, num_vocab, num_non_zero)
+
+
+
