@@ -10,18 +10,27 @@ Create simulated LDA documents
 
 # theta: topic distribution over documents (M by K)
 # phi: word distribution over topics (V by K) (lambda)
+import typing
 
 import numpy as np
 import scipy.stats as ss
 from collections import namedtuple, Counter
+from datetime import datetime
 
-ModelParameters = namedtuple("ModelParameters", ["num_topics", "num_documents",
-                                                 "num_vocab", "alpha", "beta",
-                                                 "seed", "theta", "phi"])
+ModelParameters = typing.NamedTuple("ModelParameters",
+                                    [("num_topics", int),
+                                     ("num_documents", int),
+                                     ("num_vocab", int),
+                                     ("alpha", float),
+                                     ("beta", float),
+                                     ("seed", typing.Optional[int]),
+                                     ("theta", np.ndarray),
+                                     ("phi", np.ndarray)])
 
 
-def generate_model_parameters(num_topics, num_documents, num_vocab,
-                              alpha=.1, beta=.0001, seed=None):
+def generate_model_parameters(num_topics: int, num_documents: int, num_vocab: int,
+                              alpha: float = .1, beta: float = .0001,
+                              seed: typing.Optional[int] = None) -> ModelParameters:
     """
     Generate parameters for LDA model
 
@@ -49,11 +58,8 @@ def generate_model_parameters(num_topics, num_documents, num_vocab,
     return parameters
 
 
-def generate_documents():
-    pass
-
-
-def generate_document_term_counts(model_parameters, seed=None):
+def generate_document_term_counts(model_parameters: ModelParameters,
+                                  seed: typing.Optional[int] = None):
     """
     Generate count of terms per document
 
@@ -111,8 +117,10 @@ def generate_document_term_counts(model_parameters, seed=None):
         yield list((k, v) for (k, v) in counts.items())
 
 
-def generate_mmcorpus_files(model_parameters, document_term_counts, output_prefix,
-                            training_pct=.8):
+def generate_mmcorpus_files(model_parameters: ModelParameters,
+                            document_term_counts,
+                            output_prefix: str,
+                            training_pct: float = .8):
     """
     Output training and validate mm files
 
@@ -147,8 +155,8 @@ def generate_mmcorpus_files(model_parameters, document_term_counts, output_prefi
         num_non_zero = 0
 
         for idocument in range(num_documents_training):
-            if idocument % 500 == 0:
-                print("training document {}".format(idocument + 1))
+            if idocument % 100 == 0:
+                print("{}: training document {}".format(datetime.now(), idocument + 1))
 
             term_counts = next(document_term_counts)
             for term, count in term_counts:
@@ -163,14 +171,11 @@ def generate_mmcorpus_files(model_parameters, document_term_counts, output_prefi
         num_non_zero = 0
 
         for idocument in range(num_documents_validation):
-            if idocument % 500 == 0:
-                print("validation document {}".format(idocument + 1))
+            if idocument % 100 == 0:
+                print("{}: validation document {}".format(datetime.now(), idocument + 1))
 
             term_counts = next(document_term_counts)
             for term, count in term_counts:
                 f.write("{} {} {}\n".format(idocument + 1, term, count))
                 num_non_zero += count
         _write_headers(f, num_documents_validation, num_vocab, num_non_zero)
-
-
-
