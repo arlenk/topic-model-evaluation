@@ -29,7 +29,7 @@ ModelParameters = typing.NamedTuple("ModelParameters",
 
 
 def generate_model_parameters(num_topics: int, num_documents: int, num_vocab: int,
-                              alpha: float = .1, beta: float = .0001,
+                              alpha: float = .1, beta: float = .001,
                               seed: typing.Optional[int] = None) -> ModelParameters:
     """
     Generate parameters for LDA model
@@ -71,16 +71,11 @@ def generate_document_term_counts(model_parameters: ModelParameters,
     """
     rs = np.random.RandomState(seed)
     num_documents = model_parameters.num_documents
-    num_topics = model_parameters.num_topics
-    num_vocab = model_parameters.num_vocab
 
-    # make document lenghts follow a "reasonable" distribution
+    # make document lengths follow a "reasonable" distribution
     # based on a gamma function fit from nytimes dataset
     gamma_parameters = (5.4096036273853478, -52.666540545843134, 71.072370010304383)
     min_document_length = 10
-
-    topic_array = np.arange(num_topics)
-    vocab_array = np.arange(num_vocab)
 
     for idocument in range(num_documents):
         document_length = max(int(ss.gamma.rvs(*gamma_parameters)),
@@ -89,32 +84,23 @@ def generate_document_term_counts(model_parameters: ModelParameters,
         document_topic_distribution = model_parameters.theta[idocument]
 
         # topic for each word in document
-        document_word_topics = rs.multinomial(1,
-                                              document_topic_distribution,
-                                              document_length
-                                              )
-        # document_word_topics is 0/1 matrix that looks like:
-        # [[0, 1, 0, 0, 0, 0, 0, 0],  # topic 1
-        #  [1, 0, 0, 0, 0, 0, 0, 0],  # topic 0
-        #  [0, 0, 0, 0, 1, 0, 0, 0],  # topic 4
-        # ...
-        # we'll dot this with [ 0, 1, ... num_topics ] to convert
-        # to document_word_topics to [ 1, 0, 4 ... ]
-        document_word_topics = document_word_topics.dot(topic_array)
+        document_words_per_topics = rs.multinomial(document_length,
+                                                   document_topic_distribution,)
 
-        counts = Counter()
-        for iword, word_topic in enumerate(document_word_topics):
-            topic_word_distribution = model_parameters.phi[word_topic]
+        # document_words_per_topics looks like
+        # [5, 1, 0, 0, 0, 8, 0, 0],
+        # ie, 5 words in topic 0, 1 word in topic 1, and 8 words in topic 5
 
-            word_topic = rs.multinomial(1, topic_word_distribution)
+        document_word_counts = Counter()
+        for topic, topic_word_count in enumerate(document_words_per_topics):
+            if topic_word_count:
+                topic_word_distribution = model_parameters.phi[topic]
+                word_counts = rs.multinomial(topic_word_count, topic_word_distribution)
 
-            # as before (with document_word_topics), word_topic is a 0/1
-            # array, so dot with [0, 1, 2, ... num_vocab] to convert to
-            # an index into num_vocab
-            word_index = word_topic.dot(vocab_array)
-            counts[word_index] += 1
+                for word in np.flatnonzero(word_counts):
+                    document_word_counts[word] += word_counts[word]
 
-        yield list((k, v) for (k, v) in counts.items())
+        yield list((k, v) for (k, v) in document_word_counts.items())
 
 
 def generate_mmcorpus_files(model_parameters: ModelParameters,
@@ -155,7 +141,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
         num_non_zero = 0
 
         for idocument in range(num_documents_training):
-            if idocument % 100 == 0:
+            if idocument % 500 == 0:
                 print("{}: training document {}".format(datetime.now(), idocument + 1))
 
             term_counts = next(document_term_counts)
@@ -171,7 +157,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
         num_non_zero = 0
 
         for idocument in range(num_documents_validation):
-            if idocument % 100 == 0:
+            if idocument % 500 == 0:
                 print("{}: validation document {}".format(datetime.now(), idocument + 1))
 
             term_counts = next(document_term_counts)
