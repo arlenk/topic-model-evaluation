@@ -141,7 +141,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
         num_non_zero = 0
 
         for idocument in range(num_documents_training):
-            if idocument % 500 == 0:
+            if idocument % 5000 == 0:
                 print("{}: training document {}".format(datetime.now(), idocument + 1))
 
             term_counts = next(document_term_counts)
@@ -157,7 +157,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
         num_non_zero = 0
 
         for idocument in range(num_documents_validation):
-            if idocument % 500 == 0:
+            if idocument % 5000 == 0:
                 print("{}: validation document {}".format(datetime.now(), idocument + 1))
 
             term_counts = next(document_term_counts)
