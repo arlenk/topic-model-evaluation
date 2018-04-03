@@ -73,8 +73,8 @@ def generate_document_term_counts(model_parameters: ModelParameters,
     num_documents = model_parameters.num_documents
 
     # make document lengths follow a "reasonable" distribution
-    # based on a gamma function fit from nytimes dataset
-    gamma_parameters = (5.4096036273853478, -52.666540545843134, 71.072370010304383)
+    # based on a gamma function fit from nytimes dataset (post filtering)
+    gamma_parameters = (5.5932150873844417, -27.720991727589478, 37.662385245388634)
     min_document_length = 10
 
     for idocument in range(num_documents):
