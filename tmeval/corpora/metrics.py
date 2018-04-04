@@ -44,3 +44,21 @@ def word_count_per_document(corpus: CorpusABC) -> np.ndarray:
     number_of_words = np.array(number_of_words)
     return number_of_words
 
+
+def document_count_per_term(corpus: CorpusABC) -> np.ndarray:
+    """
+    Measure distribution of number of documents that each term appears in
+
+    :param corpus: corpus to measure metric on
+    :return: number of documents per term
+
+    """
+    number_of_documents_per_term = Counter()
+
+    for doc in corpus:
+        for term, count in doc:
+            number_of_documents_per_term[term] += count
+
+    number_of_documents_per_term = np.array(list(number_of_documents_per_term.values()))
+
+    return number_of_documents_per_term
