@@ -16,13 +16,13 @@ def term_count_per_document(corpus: CorpusABC) -> np.ndarray:
     :return: number of terms per document
 
     """
-    number_of_terms = []
+    number_of_terms_per_document = []
 
     for doc in corpus:
-        number_of_terms.append(len(doc))
+        number_of_terms_per_document.append(len(doc))
 
-    number_of_terms = np.array(number_of_terms)
-    return number_of_terms
+    number_of_terms_per_document = np.array(number_of_terms_per_document)
+    return number_of_terms_per_document
 
 
 def word_count_per_document(corpus: CorpusABC) -> np.ndarray:
@@ -33,16 +33,16 @@ def word_count_per_document(corpus: CorpusABC) -> np.ndarray:
     :return: number of words per document
 
     """
-    number_of_words = []
+    number_of_words_per_document = []
 
     for doc in corpus:
         document_word_count = 0
         for term, count in doc:
             document_word_count += count
-        number_of_words.append(document_word_count)
+        number_of_words_per_document.append(document_word_count)
 
-    number_of_words = np.array(number_of_words)
-    return number_of_words
+    number_of_words_per_document = np.array(number_of_words_per_document)
+    return number_of_words_per_document
 
 
 def document_count_per_term(corpus: CorpusABC) -> np.ndarray:
