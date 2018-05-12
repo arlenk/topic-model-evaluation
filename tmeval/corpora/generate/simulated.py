@@ -11,11 +11,15 @@ Create simulated LDA documents
 # theta: topic distribution over documents (M by K)
 # phi: word distribution over topics (V by K) (lambda)
 import typing
+import os
 
 import numpy as np
 import scipy.stats as ss
 from collections import namedtuple, Counter
 from datetime import datetime
+from gensim.corpora import Dictionary
+from itertools import islice
+
 
 ModelParameters = typing.NamedTuple("ModelParameters",
                                     [("num_topics", int),
@@ -28,14 +32,14 @@ ModelParameters = typing.NamedTuple("ModelParameters",
                                      ("phi", np.ndarray)])
 
 
-def generate_model_parameters(num_topics: int, num_documents: int, num_vocab: int,
+def generate_model_parameters(num_documents: int, num_topics: int, num_vocab: int,
                               alpha: float = .1, beta: float = .001,
                               seed: typing.Optional[int] = None) -> ModelParameters:
     """
     Generate parameters for LDA model
 
-    :param num_topics:
     :param num_documents:
+    :param num_topics:
     :param num_vocab:
     :param alpha:
     :param beta:
@@ -61,7 +65,7 @@ def generate_model_parameters(num_topics: int, num_documents: int, num_vocab: in
 def generate_document_term_counts(model_parameters: ModelParameters,
                                   seed: typing.Optional[int] = None):
     """
-    Generate count of terms per document
+    Generate count of terms per document (ie, bag of words per doc)
 
     :param model_parameters:
     :param num_documents:
@@ -105,15 +109,26 @@ def generate_document_term_counts(model_parameters: ModelParameters,
 
 def generate_mmcorpus_files(model_parameters: ModelParameters,
                             document_term_counts,
+                            target_path: str,
                             output_prefix: str,
-                            training_pct: float = .8):
+                            training_pct: float = .8,
+                            dictionary: typing.Optional[Dictionary] = None):
     """
-    Output training and validate mm files
+    Output training and validation mm files for generated term counts
 
-    :param model_parameters:
-    :param document_term_counts:
-    :param output_prefix:
-    :param training_pct:
+    Creates MmCorpus files from term counts (bag of words per document)
+
+    :param model_parameters: LDA model parameters (from generate_model_parameters)
+    :param document_term_counts: word count (bag of words) per documents
+        (from generate_document_term_counts)
+    :param target_path: output directory for mmcorpus files
+    :param output_prefix: leading name for output files.
+        Files will have names like output_prefix.training.mm
+    :param training_pct: percent of corpus to save to training file
+        (rest will go to validation file)
+    :param dictionary: gensim Dictionary.  If supplied,
+        dictionary file will be saved along with mm files.
+        Note: dictionary must have at least num_vocab items
     :return:
     """
 
@@ -121,6 +136,11 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
     num_documents_training = int(training_pct * num_documents)
     num_documents_validation = num_documents - num_documents_training
     num_vocab = model_parameters.num_vocab
+
+    if dictionary:
+        if len(dictionary) < num_vocab:
+            raise ValueError("dictionary must have at least num_vocab ({})"
+                             " length".format(num_vocab))
 
     print("outputting")
     print("  num documents: {:,.0f}".format(num_documents))
@@ -135,7 +155,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
         f.write(header)
 
     # training
-    outfile = output_prefix + ".training.mm"
+    outfile = os.path.join(target_path, output_prefix + ".training.mm")
     with open(outfile, 'w') as f:
         _write_headers(f)
         num_non_zero = 0
@@ -151,7 +171,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
         _write_headers(f, num_documents_training, num_vocab, num_non_zero)
 
     # validation
-    outfile = output_prefix + ".validation.mm"
+    outfile = os.path.join(target_path, output_prefix + ".validation.mm")
     with open(outfile, 'w') as f:
         _write_headers(f)
         num_non_zero = 0
@@ -165,3 +185,11 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
                 f.write("{} {} {}\n".format(idocument + 1, term, count))
                 num_non_zero += count
         _write_headers(f, num_documents_validation, num_vocab, num_non_zero)
+
+    # dictionary
+    # artificially keep just the first num_vocab words in dictionary
+    good_ids = islice(dictionary.token2id.values(), 0, num_vocab)
+    dictionary.filter_tokens(good_ids=good_ids)
+    outfile = os.path.join(target_path, output_prefix + ".dictionary")
+
+    dictionary.save(outfile)
