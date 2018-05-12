@@ -93,13 +93,13 @@ def download_corpus(corpus_name: str,
 
 
 def download_dictionary(corpus_name: str,
-                        target_path: str) -> UciCorpus:
+                        target_path: str) -> Dictionary:
     """
     Download dictionary only for a corpus from UCI website
 
-    :param corpus_name:
-    :param target_path:
-    :return:
+    :param corpus_name: name of UCI corpus
+    :param target_path: output directory for dictionary file
+    :return: gensim Dictionary
     """
 
     url_root = "https://archive.ics.uci.edu/ml/machine-learning-databases/bag-of-words/"
