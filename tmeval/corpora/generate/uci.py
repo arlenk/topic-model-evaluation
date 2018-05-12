@@ -92,6 +92,37 @@ def download_corpus(corpus_name: str,
     return corpus
 
 
+def download_dictionary(corpus_name: str,
+                        target_path: str) -> UciCorpus:
+    """
+    Download dictionary only for a corpus from UCI website
+
+    :param corpus_name:
+    :param target_path:
+    :return:
+    """
+
+    url_root = "https://archive.ics.uci.edu/ml/machine-learning-databases/bag-of-words/"
+    target_path = os.path.join(target_path, "uci", "raw")
+    if not os.path.exists(target_path):
+        print("creating target path: {}".format(target_path))
+        os.makedirs(target_path)
+
+    vocab_file = os.path.join(target_path, "vocab.{}.txt".format(corpus_name))
+    print("downloading {} vocab file to: {}".format(corpus_name, vocab_file))
+    urllib.request.urlretrieve(url_root + "vocab.{}.txt".format(corpus_name),
+                               filename=vocab_file)
+
+    dictionary = Dictionary()
+    with open(vocab_file) as f:
+        for line in f:
+            dictionary.add_documents([[line.strip()]])
+
+    dictionary.compactify()
+
+    return dictionary
+
+
 def filter_corpus(corpus: UciCorpus) -> (CorpusABC, Dictionary):
     """
     Filter extreme (frequent and infrequent) words from dictionary
