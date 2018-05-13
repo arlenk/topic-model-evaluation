@@ -2,12 +2,14 @@
 Load previously generated/downloaded corpora
 
 """
+import pickle
 from pathlib import Path
 from gensim.corpora import MmCorpus, Dictionary
+from .generate.simulated import ModelParameters
 
 
-def load(corpus_name: str,
-         data_path: str) -> (MmCorpus, MmCorpus, Dictionary):
+def load_corpus(corpus_name: str,
+                data_path: str) -> (MmCorpus, MmCorpus, Dictionary):
     """
     Load corpus by name
 
@@ -31,12 +33,36 @@ def load(corpus_name: str,
                          "looking for file: {}".format(corpus_name, validation_corpus_file))
 
     if not dictionary_file.exists():
-        raise ValueError("unknown dictionary: {}, "
-                         "looking for file: {}".format(dictionary_name, dictionary_file))
+        raise ValueError("cannot find dictionary file for: {}, "
+                         "looking for file: {}".format(corpus_name, dictionary_file))
 
     training_corpus = MmCorpus(str(training_corpus_file))
     validation_corpus = MmCorpus(str(validation_corpus_file))
     dictionary = Dictionary.load(str(dictionary_file))
 
     return training_corpus, validation_corpus, dictionary
+
+
+def load_model_parameters(corpus_name: str,
+                          data_path: str) -> (ModelParameters):
+    """
+    Load model parameters for a simulated corpus
+
+    :param corpus_name: str
+    :param data_path: str
+    :return: ModelParameters
+        true model parameters used for simulated corpus
+
+    """
+
+    data_path = Path(data_path)
+    model_parameters_file = data_path / "{}.model_parameters.dat".format(corpus_name)
+
+    if not model_parameters_file.exists():
+        raise ValueError("cannot find model parameter file for: {}, "
+                         "looking for file: {}".format(corpus_name, model_parameters_file))
+
+    model_parameters = pickle.load(open(str(model_parameters_file), 'rb'))
+
+    return model_parameters
 

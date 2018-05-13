@@ -10,6 +10,7 @@ Create simulated LDA documents
 
 # theta: topic distribution over documents (M by K)
 # phi: word distribution over topics (V by K) (lambda)
+import pickle
 import typing
 import os
 
@@ -166,7 +167,9 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
 
             term_counts = next(document_term_counts)
             for term, count in term_counts:
-                f.write("{} {} {}\n".format(idocument + 1, term, count))
+                # mmcorpus files start with doc id 1 (not 0)
+                document_id = idocument + 1
+                f.write("{} {} {}\n".format(document_id, term, count))
                 num_non_zero += count
         _write_headers(f, num_documents_training, num_vocab, num_non_zero)
 
@@ -182,7 +185,8 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
 
             term_counts = next(document_term_counts)
             for term, count in term_counts:
-                f.write("{} {} {}\n".format(idocument + 1, term, count))
+                document_id = idocument + 1
+                f.write("{} {} {}\n".format(document_id, term, count))
                 num_non_zero += count
         _write_headers(f, num_documents_validation, num_vocab, num_non_zero)
 
@@ -191,5 +195,8 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
     good_ids = islice(dictionary.token2id.values(), 0, num_vocab)
     dictionary.filter_tokens(good_ids=good_ids)
     outfile = os.path.join(target_path, output_prefix + ".dictionary")
-
     dictionary.save(outfile)
+
+    # save ground truth values as well
+    outfile = os.path.join(target_path, output_prefix + ".model_parameters.dat")
+    pickle.dump(model_parameters, open(outfile, 'wb'), protocol=-1)
