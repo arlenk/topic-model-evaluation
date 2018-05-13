@@ -145,7 +145,7 @@ def generate_mmcorpus_files(model_parameters: ModelParameters,
     print("outputting")
     print("  num documents: {:,.0f}".format(num_documents))
     print("  num training: {:,.0f}".format(num_documents_training))
-    print("  num validaiton: {:,.0f}".format(num_documents_validation))
+    print("  num validation: {:,.0f}".format(num_documents_validation))
 
     def _write_headers(f, _num_documents=-1, _num_vocab=-1, _num_non_zero=-1):
         f.seek(0)
