@@ -33,6 +33,7 @@ class GensimBatchLDA():
         Train model with corpus of documents
 
         :param corpus: training corpus
+        :param passes: number of passes over training corpus
         :return:
         """
         passes = passes or self.passes
@@ -49,7 +50,7 @@ class GensimBatchLDA():
 
         score = self.model.log_perplexity(corpus)
         return score
-    
+
 
 class GensimOnlineLDA():
     def __init__(self, corpus: MmCorpus,
