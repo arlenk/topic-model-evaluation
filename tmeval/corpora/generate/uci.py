@@ -73,7 +73,7 @@ def download_corpus(corpus_name: str,
     """
 
     url_root = "https://archive.ics.uci.edu/ml/machine-learning-databases/bag-of-words/"
-    target_path = os.path.join(target_path, "uci", "raw")
+    target_path = os.path.join(target_path, "raw", "uci")
     if not os.path.exists(target_path):
         print("creating target path: {}".format(target_path))
         os.makedirs(target_path)
