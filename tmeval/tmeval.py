@@ -3,10 +3,17 @@ import corpora.generate.uci as cgu
 
 
 # sub-command functions
-def create_data(args):
-    corpora_to_download = args.corpora
-    download_all = args.all
-    data_dir = args.data_dir
+def create_data(opts: argparse.Namespace):
+    """
+    Create/download corpora
+
+    :param opts: argparse.Namespace
+    :return:
+    """
+    
+    corpora_to_download = opts.corpora
+    download_all = opts.all
+    data_dir = opts.data_dir
 
     if len(corpora_to_download) and download_all:
         raise ValueError("either specify corpora to download or --all, not both")
@@ -25,7 +32,6 @@ def create_data(args):
             cgu.generate_mmcorpus_files(corpus_name, data_dir)
         else:
             raise ValueError("unknown source for corpus: {}".format(corpus))
-
 
 
 if __name__ == "__main__":
